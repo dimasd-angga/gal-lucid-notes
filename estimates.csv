@@ -1,0 +1,18 @@
+Story,Task,Estimate min (hr),Estimate max (hr),Actual,Comment
+Day 1 - Setup,Project setup and dependencies,0.5,1.0,,React + TypeScript + TailwindCSS + Gemini API
+Day 1 - Setup,Create estimates.csv and git setup,0.25,0.5,,First commit with estimates
+Day 1 - Core UI,Basic layout and responsive design,2.0,3.0,,Header sidebar main content area
+Day 1 - Core UI,Note editor and CRUD operations,2.0,3.0,,Create edit delete notes with tags
+Day 1 - Core UI,Search and filter functionality,1.5,2.0,,Real-time search and tag filtering
+Day 1 - Data,Mock data and basic state management,1.0,1.5,,Sample notes and React state
+Day 1 - Total,,7.25,11.0,,Day 1 target: 7-11 hours
+Day 2 - AI,Gemini API integration setup,1.0,1.5,,API key configuration and service
+Day 2 - AI,Implement note summarization,1.5,2.0,,Gemini API for text summarization
+Day 2 - AI,Auto-title generation,1.0,1.5,,Generate titles using Gemini
+Day 2 - Analytics,Simple analytics dashboard,2.0,3.0,,Basic charts for notes and AI usage
+Day 2 - Polish,Loading states and error handling,1.0,1.5,,User feedback and edge cases
+Day 2 - Deploy,Build and deploy to Vercel,0.5,1.0,,Production deployment
+Day 2 - Demo,Record demo video,1.0,1.5,,Feature demo and code walkthrough
+Day 2 - Docs,README and final submission,0.5,1.0,,Documentation and submission prep
+Day 2 - Total,,8.5,12.5,,Day 2 target: 8-12 hours
+Project Total,,15.75,23.5,,2-day MVP delivery
