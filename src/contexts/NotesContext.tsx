@@ -98,7 +98,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
 
   // Sync with localStorage whenever notes change
   useEffect(() => {
-    setStoredNotes(state.notes);
+    if (selectedNote && selectedNote.title && selectedNote.content !== undefined && (debouncedTitle !== selectedNote.title || debouncedContent !== selectedNote.content)) {
   }, [state.notes, setStoredNotes]);
 
   const createNote = async (): Promise<Note> => {
@@ -113,10 +113,17 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
         tags: ['general'],
         createdAt: new Date(),
         updatedAt: new Date(),
+        isFavorite: false,
         aiGenerated: false,
       };
 
       dispatch({ type: 'ADD_NOTE', payload: newNote });
+      
+      // Auto-switch to notes view when creating a note
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('switchToNotesView'));
+      }, 100);
+      
       return newNote;
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to create note' });

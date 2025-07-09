@@ -6,12 +6,24 @@ import { NotesList } from './components/NotesList';
 import { NoteEditor } from './components/NoteEditor';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Menu, X, Home, FileText } from 'lucide-react';
+import { useNotes } from './contexts/NotesContext';
 
 type View = 'dashboard' | 'notes';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Listen for custom event to switch to notes view
+  React.useEffect(() => {
+    const handleSwitchToNotesView = () => {
+      setCurrentView('notes');
+      setSidebarOpen(false);
+    };
+
+    window.addEventListener('switchToNotesView', handleSwitchToNotesView);
+    return () => window.removeEventListener('switchToNotesView', handleSwitchToNotesView);
+  }, []);
 
   return (
     <ThemeProvider>
@@ -70,6 +82,11 @@ function App() {
 
             {/* Navigation */}
             <div className="p-4 mt-14 lg:mt-0">
+              {/* Create Note Button - Always at top */}
+              <div className="mb-6">
+                <CreateNoteButton />
+              </div>
+              
               <div className="space-y-2 mb-6">
                 <button
                   onClick={() => {
@@ -116,5 +133,33 @@ function App() {
     </ThemeProvider>
   );
 }
+
+// Create Note Button Component
+const CreateNoteButton: React.FC = () => {
+  const { createNote, isLoading } = useNotes();
+
+  const handleCreateNote = async () => {
+    try {
+      await createNote();
+    } catch (error) {
+      console.error('Failed to create note:', error);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCreateNote}
+      disabled={isLoading}
+      className="w-full flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-xl hover:from-primary-700 hover:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-soft dark:shadow-soft-dark hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+    >
+      {isLoading ? (
+        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+      ) : (
+        <Plus size={18} className="mr-2" />
+      )}
+      New Note
+    </button>
+  );
+};
 
 export default App;

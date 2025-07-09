@@ -1,21 +1,15 @@
 import React from 'react';
-import { Plus, FileText, Clock, Star, TrendingUp } from 'lucide-react';
+import { FileText, Clock, Star, TrendingUp } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
 import { formatRelativeTime } from '../utils/date';
 
 export const Dashboard: React.FC = () => {
-  const { notes, createNote, selectNote, isLoading } = useNotes();
-
-  const handleCreateNote = async () => {
-    try {
-      await createNote();
-    } catch (error) {
-      console.error('Failed to create note:', error);
-    }
-  };
+  const { notes, selectNote } = useNotes();
 
   const handleNoteClick = (noteId: string) => {
     selectNote(noteId);
+    // Switch to notes view when clicking on a note
+    window.dispatchEvent(new CustomEvent('switchToNotesView'));
   };
 
   const recentNotes = [...notes]
@@ -92,25 +86,6 @@ export const Dashboard: React.FC = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Words</p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={handleCreateNote}
-              disabled={isLoading}
-              className="flex items-center justify-center px-6 py-4 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-xl hover:from-primary-700 hover:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-soft dark:shadow-soft-dark hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              ) : (
-                <Plus size={18} className="mr-2" />
-              )}
-              Create New Note
-            </button>
           </div>
         </div>
 
@@ -224,18 +199,9 @@ export const Dashboard: React.FC = () => {
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed mb-6">
               Start your journey by creating your first note. Organize your thoughts, ideas, and inspirations all in one place.
             </p>
-            <button
-              onClick={handleCreateNote}
-              disabled={isLoading}
-              className="inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-xl hover:from-primary-700 hover:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-soft dark:shadow-soft-dark hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              ) : (
-                <Plus size={18} className="mr-2" />
-              )}
-              Create Your First Note
-            </button>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Use the "New Note" button in the sidebar to get started.
+            </p>
           </div>
         )}
       </div>

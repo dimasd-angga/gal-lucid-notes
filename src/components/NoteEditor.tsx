@@ -42,7 +42,9 @@ export const NoteEditor: React.FC = () => {
 
   // Auto-save when debounced values change
   useEffect(() => {
-    if (selectedNote && (debouncedTitle !== selectedNote.title || debouncedContent !== selectedNote.content)) {
+    if (selectedNote && selectedNote.title && selectedNote.content !== undefined && 
+        (debouncedTitle !== selectedNote.title || debouncedContent !== selectedNote.content) &&
+        (debouncedTitle.trim() !== '' || debouncedContent.trim() !== '')) {
       const saveNote = async () => {
         try {
           await updateNote(selectedNote.id, {
