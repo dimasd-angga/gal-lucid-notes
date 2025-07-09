@@ -98,8 +98,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
 
   // Sync with localStorage whenever notes change
   useEffect(() => {
-    if (selectedNote && selectedNote.title && selectedNote.content !== undefined && (debouncedTitle !== selectedNote.title || debouncedContent !== selectedNote.content)) {
-    }
+    setStoredNotes(state.notes);
   }, [state.notes, setStoredNotes]);
 
   const createNote = async (): Promise<Note> => {
