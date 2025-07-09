@@ -86,7 +86,7 @@ export const NoteEditor: React.FC = () => {
 
   if (!selectedNote) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4">
         <div className="text-center animate-fade-in">
           <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-soft dark:shadow-soft-dark">
             <Type size={32} className="text-gray-400 dark:text-gray-500" />
@@ -103,11 +103,11 @@ export const NoteEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+    <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Editor Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-b border-gray-200/50 dark:border-gray-700/50 p-6">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-b border-gray-200/50 dark:border-gray-700/50 p-4 lg:p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 lg:space-x-3">
             <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
               isSaving 
                 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' 
@@ -133,7 +133,7 @@ export const NoteEditor: React.FC = () => {
             )}
           </div>
           
-          <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="hidden sm:flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
             <span>{getWordCount()} words</span>
             <span>{getCharacterCount()} characters</span>
           </div>
@@ -146,7 +146,7 @@ export const NoteEditor: React.FC = () => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Note title..."
-          className="w-full text-2xl font-bold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none focus:ring-0 p-0 transition-colors duration-200"
+          className="w-full text-xl lg:text-2xl font-bold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none focus:ring-0 p-0 transition-colors duration-200"
         />
         
         {/* Tags Input */}
@@ -163,13 +163,13 @@ export const NoteEditor: React.FC = () => {
       </div>
       
       {/* Content Editor */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4 lg:p-6">
         <textarea
           ref={contentRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Start writing your note..."
-          className="w-full h-full min-h-96 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none resize-none focus:ring-0 p-0 text-base leading-relaxed transition-colors duration-200"
+          className="w-full h-full min-h-64 lg:min-h-96 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none resize-none focus:ring-0 p-0 text-sm lg:text-base leading-relaxed transition-colors duration-200"
           style={{ fontFamily: 'Inter, sans-serif' }}
         />
       </div>

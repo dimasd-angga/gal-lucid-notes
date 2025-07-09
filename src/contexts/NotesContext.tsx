@@ -25,6 +25,7 @@ interface NotesContextType extends NotesState {
   updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   selectNote: (id: string | null) => void;
+  toggleFavorite: (id: string) => Promise<void>;
   getSelectedNote: () => Note | null;
 }
 
@@ -131,7 +132,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
 
     try {
       // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 100));
       dispatch({ type: 'UPDATE_NOTE', payload: { id, updates } });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to save note' });
@@ -157,6 +158,18 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     }
   };
 
+  const toggleFavorite = async (id: string): Promise<void> => {
+    const note = state.notes.find(n => n.id === id);
+    if (!note) return;
+
+    try {
+      await updateNote(id, { isFavorite: !note.isFavorite });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to update favorite status' });
+      throw error;
+    }
+  };
+
   const selectNote = (id: string | null): void => {
     dispatch({ type: 'SELECT_NOTE', payload: id });
   };
@@ -170,6 +183,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     createNote,
     updateNote,
     deleteNote,
+    toggleFavorite,
     selectNote,
     getSelectedNote,
   };

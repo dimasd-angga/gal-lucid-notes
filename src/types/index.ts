@@ -5,6 +5,7 @@ export interface Note {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  isFavorite?: boolean;
   aiGenerated?: boolean;
 }
 
