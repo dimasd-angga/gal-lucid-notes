@@ -110,7 +110,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
         id: generateId(),
         title: 'Untitled Note',
         content: '',
-        tags: ['general'],
+        tags: ['general'], // Ensure at least one tag
         createdAt: new Date(),
         updatedAt: new Date(),
         isFavorite: false,
@@ -140,8 +140,13 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Ensure tags array is not empty
+      if (updates.tags && updates.tags.length === 0) {
+        updates.tags = ['general'];
+      }
+      
+      // Simulate async operation with shorter delay
+      await new Promise(resolve => setTimeout(resolve, 100));
       dispatch({ type: 'UPDATE_NOTE', payload: { id, updates } });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to save note' });
@@ -156,8 +161,8 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Simulate async operation with shorter delay
+      await new Promise(resolve => setTimeout(resolve, 100));
       dispatch({ type: 'DELETE_NOTE', payload: id });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to delete note' });

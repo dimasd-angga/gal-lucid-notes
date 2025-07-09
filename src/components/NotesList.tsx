@@ -1,12 +1,23 @@
 import React from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
 import { NoteItem } from './NoteItem';
 
-export const NotesList: React.FC = () => {
-  const { notes, selectedNoteId, createNote, isLoading } = useNotes();
+interface NotesListProps {
+  selectedTagFilters: string[];
+}
 
-  const sortedNotes = [...notes].sort((a, b) => 
+export const NotesList: React.FC<NotesListProps> = ({ selectedTagFilters }) => {
+  const { notes, selectedNoteId } = useNotes();
+
+  // Filter notes based on selected tags
+  const filteredNotes = selectedTagFilters.length > 0
+    ? notes.filter(note => 
+        selectedTagFilters.some(tag => note.tags.includes(tag))
+      )
+    : notes;
+
+  const sortedNotes = [...filteredNotes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
@@ -16,12 +27,17 @@ export const NotesList: React.FC = () => {
       <div className="p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            All Notes
+            {selectedTagFilters.length > 0 ? 'Filtered Notes' : 'All Notes'}
           </h3>
           <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-            {notes.length}
+            {sortedNotes.length}
           </span>
         </div>
+        {selectedTagFilters.length > 0 && (
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Showing notes with: {selectedTagFilters.join(', ')}
+          </div>
+        )}
       </div>
       
       {/* Notes List */}
@@ -43,10 +59,13 @@ export const NotesList: React.FC = () => {
                 <FileText size={24} className="text-gray-400 dark:text-gray-500" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                No notes yet
+                {selectedTagFilters.length > 0 ? 'No matching notes' : 'No notes yet'}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 max-w-48 mx-auto leading-relaxed">
-                Go to Dashboard to create your first note.
+                {selectedTagFilters.length > 0 
+                  ? 'Try adjusting your tag filters or create a new note.'
+                  : 'Go to Dashboard to create your first note.'
+                }
               </p>
             </div>
           </div>

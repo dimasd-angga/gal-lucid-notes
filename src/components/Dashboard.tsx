@@ -1,10 +1,13 @@
 import React from 'react';
 import { FileText, Clock, Star, TrendingUp } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
+import { useTags } from '../contexts/TagsContext';
+import { TagPill } from './TagPill';
 import { formatRelativeTime } from '../utils/date';
 
 export const Dashboard: React.FC = () => {
   const { notes, selectNote } = useNotes();
+  const { getTagColor } = useTags();
 
   const handleNoteClick = (noteId: string) => {
     selectNote(noteId);
@@ -118,12 +121,12 @@ export const Dashboard: React.FC = () => {
                     {note.tags.length > 0 && (
                       <div className="flex items-center space-x-1">
                         {note.tags.slice(0, 2).map((tag) => (
-                          <span
+                          <TagPill
                             key={tag}
-                            className="px-2 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full text-xs font-medium"
-                          >
-                            {tag}
-                          </span>
+                            tag={tag}
+                            color={getTagColor(tag)}
+                            size="sm"
+                          />
                         ))}
                         {note.tags.length > 2 && (
                           <span className="text-primary-600 dark:text-primary-400">
@@ -166,12 +169,12 @@ export const Dashboard: React.FC = () => {
                     {note.tags.length > 0 && (
                       <div className="flex items-center space-x-1">
                         {note.tags.slice(0, 2).map((tag) => (
-                          <span
+                          <TagPill
                             key={tag}
-                            className="px-2 py-1 bg-yellow-100 dark:bg-yellow-800/30 text-yellow-700 dark:text-yellow-300 rounded-full text-xs font-medium"
-                          >
-                            {tag}
-                          </span>
+                            tag={tag}
+                            color={getTagColor(tag)}
+                            size="sm"
+                          />
                         ))}
                         {note.tags.length > 2 && (
                           <span className="text-yellow-600 dark:text-yellow-400">

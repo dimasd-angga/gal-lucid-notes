@@ -2,6 +2,8 @@ import React from 'react';
 import { MoreVertical, Trash2 } from 'lucide-react';
 import { Note } from '../types';
 import { useNotes } from '../contexts/NotesContext';
+import { useTags } from '../contexts/TagsContext';
+import { TagPill } from './TagPill';
 import { formatRelativeTime } from '../utils/date';
 
 interface NoteItemProps {
@@ -11,6 +13,7 @@ interface NoteItemProps {
 
 export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
   const { selectNote, deleteNote } = useNotes();
+  const { getTagColor, decrementTagCount } = useTags();
   const [showMenu, setShowMenu] = React.useState(false);
 
   const handleClick = () => {
@@ -21,6 +24,10 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
     e.stopPropagation();
     if (window.confirm('Are you sure you want to delete this note?')) {
       try {
+        // Decrement tag counts for all tags in this note
+        for (const tagName of note.tags) {
+          decrementTagCount(tagName);
+        }
         await deleteNote(note.id);
       } catch (error) {
         console.error('Failed to delete note:', error);
@@ -74,16 +81,12 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
             {note.tags.length > 0 && (
               <div className="hidden sm:flex items-center space-x-1">
                 {note.tags.slice(0, 2).map((tag) => (
-                  <span
+                  <TagPill
                     key={tag}
-                    className={`px-2 py-0.5 text-xs rounded-full font-medium transition-colors duration-200 ${
-                      isSelected
-                        ? 'bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                    }`}
-                  >
-                    {tag}
-                  </span>
+                    tag={tag}
+                    color={getTagColor(tag)}
+                    size="sm"
+                  />
                 ))}
                 {note.tags.length > 2 && (
                   <span className={`text-xs lg:text-sm transition-colors duration-200 ${

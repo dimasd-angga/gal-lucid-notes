@@ -9,16 +9,18 @@ export interface Note {
   aiGenerated?: boolean;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  color: string;
-  noteCount: number;
-}
 
 export interface Tag {
   id: string;
   name: string;
+  color: string;
+  count: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
   noteCount: number;
 }
 

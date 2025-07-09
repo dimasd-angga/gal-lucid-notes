@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotesProvider } from './contexts/NotesContext';
+import { TagsProvider } from './contexts/TagsContext';
 import { Dashboard } from './components/Dashboard';
 import { NotesList } from './components/NotesList';
 import { NoteEditor } from './components/NoteEditor';
+import { TagFilter } from './components/TagFilter';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Menu, X, Home, FileText, Plus } from 'lucide-react';
 import { useNotes } from './contexts/NotesContext';
@@ -13,6 +15,7 @@ type View = 'dashboard' | 'notes';
 function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
 
   // Listen for custom event to switch to notes view
   React.useEffect(() => {
@@ -25,10 +28,23 @@ function App() {
     return () => window.removeEventListener('switchToNotesView', handleSwitchToNotesView);
   }, []);
 
+  const handleTagToggle = (tag: string) => {
+    setSelectedTagFilters(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const handleClearTagFilters = () => {
+    setSelectedTagFilters([]);
+  };
+
   return (
     <ThemeProvider>
-      <NotesProvider>
-        <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 transition-all duration-300">
+      <TagsProvider>
+        <NotesProvider>
+          <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 transition-all duration-300">
           {/* Mobile Header */}
           <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-b border-gray-200/50 dark:border-gray-700/50 lg:hidden">
             <div className="flex items-center justify-between h-14 px-4">
@@ -121,15 +137,25 @@ function App() {
             </div>
 
             {/* Notes List - only show when in notes view */}
-            {currentView === 'notes' && <NotesList />}
+            {currentView === 'notes' && (
+              <>
+                <NotesList selectedTagFilters={selectedTagFilters} />
+                <TagFilter
+                  selectedTags={selectedTagFilters}
+                  onTagToggle={handleTagToggle}
+                  onClearAll={handleClearTagFilters}
+                />
+              </>
+            )}
           </div>
           
           {/* Main Content */}
           <div className="flex-1 pt-14 lg:pt-0">
             {currentView === 'dashboard' ? <Dashboard /> : <NoteEditor />}
           </div>
-        </div>
-      </NotesProvider>
+          </div>
+        </NotesProvider>
+      </TagsProvider>
     </ThemeProvider>
   );
 }
