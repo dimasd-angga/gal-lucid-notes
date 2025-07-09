@@ -120,6 +120,8 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
       dispatch({ type: 'ADD_NOTE', payload: newNote });
       
       // Auto-switch to notes view when creating a note
+      dispatch({ type: 'SELECT_NOTE', payload: newNote.id });
+      
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('switchToNotesView'));
       }, 100);
@@ -139,7 +141,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
 
     try {
       // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       dispatch({ type: 'UPDATE_NOTE', payload: { id, updates } });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to save note' });

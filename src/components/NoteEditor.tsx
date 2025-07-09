@@ -12,6 +12,7 @@ export const NoteEditor: React.FC = () => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
   
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -19,36 +20,46 @@ export const NoteEditor: React.FC = () => {
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
 
-  // Load selected note data
+  // Load selected note data and reset state when note changes
   useEffect(() => {
     if (selectedNote) {
-      setTitle(selectedNote.title);
-      setContent(selectedNote.content);
-      setTags(selectedNote.tags);
-      setLastSaved(selectedNote.updatedAt);
-      
-      // Auto-focus title if it's a new note
-      if (selectedNote.title === 'Untitled Note' && titleRef.current) {
-        titleRef.current.focus();
-        titleRef.current.select();
+      // Only update state if we're switching to a different note
+      if (currentNoteId !== selectedNote.id) {
+        setTitle(selectedNote.title);
+        setContent(selectedNote.content);
+        setTags(selectedNote.tags);
+        setLastSaved(selectedNote.updatedAt);
+        setCurrentNoteId(selectedNote.id);
+        
+        // Auto-focus title if it's a new note
+        if (selectedNote.title === 'Untitled Note' && titleRef.current) {
+          setTimeout(() => {
+            titleRef.current?.focus();
+            titleRef.current?.select();
+          }, 100);
+        }
       }
     } else {
+      // Clear state when no note is selected
       setTitle('');
       setContent('');
       setTags([]);
       setLastSaved(null);
+      setCurrentNoteId(null);
     }
-  }, [selectedNote]);
+  }, [selectedNote, currentNoteId]);
 
   // Auto-save when debounced values change
   useEffect(() => {
-    if (selectedNote && selectedNote.title && selectedNote.content !== undefined && 
+    if (selectedNote && 
+        selectedNote.id === currentNoteId && // Ensure we're saving to the correct note
         (debouncedTitle !== selectedNote.title || debouncedContent !== selectedNote.content) &&
         (debouncedTitle.trim() !== '' || debouncedContent.trim() !== '')) {
+      
       const saveNote = async () => {
         try {
           await updateNote(selectedNote.id, {
-            title: debouncedTitle,
+            title: debouncedTitle.trim() || 'Untitled Note',
             content: debouncedContent,
           });
           setLastSaved(new Date());
@@ -59,7 +70,7 @@ export const NoteEditor: React.FC = () => {
       
       saveNote();
     }
-  }, [debouncedTitle, debouncedContent, selectedNote, updateNote]);
+  }, [debouncedTitle, debouncedContent, selectedNote, currentNoteId, updateNote]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -73,7 +84,7 @@ export const NoteEditor: React.FC = () => {
     const tagArray = newTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
     setTags(tagArray);
     
-    if (selectedNote) {
+    if (selectedNote && selectedNote.id === currentNoteId) {
       updateNote(selectedNote.id, { tags: tagArray });
     }
   };
