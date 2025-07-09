@@ -2,11 +2,10 @@ export interface Note {
   id: string;
   title: string;
   content: string;
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
-  tags: string[];
-  category: string;
-  isFavorite: boolean;
+  aiGenerated?: boolean;
 }
 
 export interface Category {

@@ -96,4 +96,4 @@ jspm_packages/
 .tern-port
 
 # Stores VSCode versions used for testing VSCode extensions
-.vscode-testnode_modules/
+.vscode-test
