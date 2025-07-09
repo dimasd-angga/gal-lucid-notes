@@ -5,7 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { NotesList } from './components/NotesList';
 import { NoteEditor } from './components/NoteEditor';
 import { ThemeToggle } from './components/ThemeToggle';
-import { Menu, X, Home, FileText } from 'lucide-react';
+import { Menu, X, Home, FileText, Plus } from 'lucide-react';
 import { useNotes } from './contexts/NotesContext';
 
 type View = 'dashboard' | 'notes';
