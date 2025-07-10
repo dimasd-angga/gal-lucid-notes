@@ -7,6 +7,7 @@ import { NotesList } from './components/NotesList';
 import { NoteEditor } from './components/NoteEditor';
 import { TagFilter } from './components/TagFilter';
 import { ThemeToggle } from './components/ThemeToggle';
+import { SearchBar } from './components/SearchBar';
 import { Menu, X, Home, FileText, Plus } from 'lucide-react';
 import { useNotes } from './contexts/NotesContext';
 
@@ -16,6 +17,7 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Listen for custom event to switch to notes view
   React.useEffect(() => {
@@ -24,8 +26,25 @@ function App() {
       setSidebarOpen(false);
     };
 
+    const handleClearFilters = () => {
+      setSearchQuery('');
+      setSelectedTagFilters([]);
+    };
+
+    const handleCreateNote = () => {
+      // This will be handled by the CreateNoteButton component
+      document.querySelector('[data-create-note]')?.click();
+    };
+
     window.addEventListener('switchToNotesView', handleSwitchToNotesView);
-    return () => window.removeEventListener('switchToNotesView', handleSwitchToNotesView);
+    window.addEventListener('clearFilters', handleClearFilters);
+    window.addEventListener('createNote', handleCreateNote);
+    
+    return () => {
+      window.removeEventListener('switchToNotesView', handleSwitchToNotesView);
+      window.removeEventListener('clearFilters', handleClearFilters);
+      window.removeEventListener('createNote', handleCreateNote);
+    };
   }, []);
 
   const handleTagToggle = (tag: string) => {
@@ -38,6 +57,10 @@ function App() {
 
   const handleClearTagFilters = () => {
     setSelectedTagFilters([]);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
   return (
@@ -78,7 +101,7 @@ function App() {
           
           {/* Sidebar */}
           <div className={`
-            fixed inset-y-0 left-0 z-30 w-80 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-r border-gray-200/50 dark:border-gray-700/50 transform transition-transform duration-300 ease-in-out
+            fixed inset-y-0 left-0 z-30 w-80 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-r border-gray-200/50 dark:border-gray-700/50 transform transition-transform duration-300 ease-in-out flex flex-col
             lg:relative lg:translate-x-0 lg:z-10
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           `}>
@@ -97,7 +120,7 @@ function App() {
             </div>
 
             {/* Navigation */}
-            <div className="p-4 mt-14 lg:mt-0">
+            <div className="p-4 mt-14 lg:mt-0 flex-shrink-0">
               {/* Create Note Button - Always at top */}
               <div className="mb-6">
                 <CreateNoteButton />
@@ -138,14 +161,21 @@ function App() {
 
             {/* Notes List - only show when in notes view */}
             {currentView === 'notes' && (
-              <>
-                <NotesList selectedTagFilters={selectedTagFilters} />
+              <div className="flex-1 flex flex-col min-h-0">
+                <SearchBar 
+                  onSearch={handleSearch}
+                  placeholder="Search notes..."
+                />
+                <NotesList 
+                  selectedTagFilters={selectedTagFilters} 
+                  searchQuery={searchQuery}
+                />
                 <TagFilter
                   selectedTags={selectedTagFilters}
                   onTagToggle={handleTagToggle}
                   onClearAll={handleClearTagFilters}
                 />
-              </>
+              </div>
             )}
           </div>
           
@@ -174,6 +204,7 @@ const CreateNoteButton: React.FC = () => {
 
   return (
     <button
+      data-create-note
       onClick={handleCreateNote}
       disabled={isLoading}
       className="w-full flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-xl hover:from-primary-700 hover:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-soft dark:shadow-soft-dark hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"

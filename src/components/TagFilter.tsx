@@ -20,7 +20,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   const sortedTags = [...tags].sort((a, b) => b.count - a.count);
 
   return (
-    <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50">
+    <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
           <Filter size={16} className="text-gray-500 dark:text-gray-400 mr-2" />

@@ -51,10 +51,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
 
   // Handle tag removal
   const handleTagRemove = (tagToRemove: string) => {
-    // Prevent removing the last tag if required
-    if (required && selectedTags.length <= 1) {
-      return;
-    }
     const newTags = selectedTags.filter(tag => tag !== tagToRemove);
     onTagsChange(newTags);
   };
@@ -62,7 +58,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
   // Handle creating new tag
   const handleCreateTag = async (tagName: string) => {
     const trimmedName = tagName.trim();
-    if (trimmedName && trimmedName.length <= 20 && !selectedTags.includes(trimmedName)) {
+    if (trimmedName && trimmedName.length <= 20) {
       // Validate tag name (no special characters except hyphens and underscores)
       if (!/^[a-zA-Z0-9\-_\s]+$/.test(trimmedName)) {
         return;
@@ -95,11 +91,9 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     } else if (e.key === 'Escape') {
       setIsOpen(false);
       setFocusedIndex(-1);
-    } else if (e.key === 'Backspace' && !inputValue && selectedTags.length > 0) {
-      // Remove last tag on backspace if input is empty
-      if (!required || selectedTags.length > 1) {
-        handleTagRemove(selectedTags[selectedTags.length - 1]);
-      }
+    } else if (e.key === 'Backspace' && !inputValue && selectedTags.length > 0 && !required) {
+      // Remove last tag on backspace if input is empty and not required
+      handleTagRemove(selectedTags[selectedTags.length - 1]);
     }
   };
 

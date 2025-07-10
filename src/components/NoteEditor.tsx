@@ -301,13 +301,13 @@ export const NoteEditor: React.FC = () => {
           maxLength={100}
         />
         
-        {/* Tags Selector */}
-        <div className="mb-4">
+        {/* Tags Selector - New row below title */}
+        <div className="mb-6">
           <TagSelector
             selectedTags={tags}
             onTagsChange={handleTagsChange}
             placeholder="Add tags to organize your note..."
-            required={true}
+            required={false}
           />
         </div>
       </div>

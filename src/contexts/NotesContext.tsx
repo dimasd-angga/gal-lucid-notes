@@ -110,7 +110,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
         id: generateId(),
         title: 'Untitled Note',
         content: '',
-        tags: ['general'], // Ensure at least one tag
+        tags: [], // No default tags
         createdAt: new Date(),
         updatedAt: new Date(),
         isFavorite: false,
@@ -140,11 +140,6 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      // Ensure tags array is not empty
-      if (updates.tags && updates.tags.length === 0) {
-        updates.tags = ['general'];
-      }
-      
       // Simulate async operation with shorter delay
       await new Promise(resolve => setTimeout(resolve, 100));
       dispatch({ type: 'UPDATE_NOTE', payload: { id, updates } });
