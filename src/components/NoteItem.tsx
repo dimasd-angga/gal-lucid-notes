@@ -43,7 +43,7 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
   return (
     <div
       onClick={handleClick}
-      className={`relative group p-3 lg:p-4 rounded-xl cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:-translate-y-0.5 mb-2 ${
+      className={`relative group p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:-translate-y-0.5 mb-2 ${
         isSelected
           ? 'bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 shadow-soft dark:shadow-soft-dark'
           : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-transparent hover:border-gray-200 dark:hover:border-gray-600'
@@ -51,7 +51,7 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <h3 className={`font-semibold text-sm lg:text-base mb-1 truncate transition-colors duration-200 ${
+          <h3 className={`font-semibold text-sm mb-1.5 truncate transition-colors duration-200 ${
             isSelected 
               ? 'text-primary-900 dark:text-primary-100' 
               : 'text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-300'
@@ -60,7 +60,7 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
           </h3>
           
           {note.content && (
-            <p className={`text-xs lg:text-sm mb-2 leading-relaxed transition-colors duration-200 ${
+            <p className={`text-xs mb-2 leading-relaxed transition-colors duration-200 line-clamp-2 ${
               isSelected 
                 ? 'text-primary-700 dark:text-primary-300' 
                 : 'text-gray-600 dark:text-gray-400'
@@ -70,7 +70,7 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
           )}
           
           <div className="flex items-center justify-between">
-            <span className={`text-xs lg:text-sm transition-colors duration-200 ${
+            <span className={`text-xs transition-colors duration-200 ${
               isSelected 
                 ? 'text-primary-600 dark:text-primary-400' 
                 : 'text-gray-500 dark:text-gray-500'
@@ -89,7 +89,7 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
                   />
                 ))}
                 {note.tags.length > 2 && (
-                  <span className={`text-xs lg:text-sm transition-colors duration-200 ${
+                  <span className={`text-xs transition-colors duration-200 ${
                     isSelected 
                       ? 'text-primary-600 dark:text-primary-400' 
                       : 'text-gray-500 dark:text-gray-500'

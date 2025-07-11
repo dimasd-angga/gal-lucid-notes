@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save, Clock, Type, Trash2, AlertCircle } from 'lucide-react';
+import { Save, Clock, Type, Trash2, AlertCircle, Sparkles, Wand2 } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
 import { useTags } from '../contexts/TagsContext';
 import { TagSelector } from './TagSelector';
+import { SummarizeButton } from './SummarizeButton';
+import { SummaryModal } from './SummaryModal';
+import { RichTextEditor } from './RichTextEditor';
+import { AIToolbar } from './AIToolbar';
+import { AutoTitleButton } from './AutoTitleButton';
+import { TitleSuggestions } from './TitleSuggestions';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatRelativeTime } from '../utils/date';
+import { summarizeText, generateTitleSuggestions, expandContent, getWritingHelp } from '../services/geminiService';
 
 export const NoteEditor: React.FC = () => {
   const { getSelectedNote, updateNote, deleteNote, isSaving } = useNotes();
@@ -19,9 +26,22 @@ export const NoteEditor: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summaryResult, setSummaryResult] = useState<string>('');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  
+  // AI Title Generation
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  
+  // AI Content Expansion
+  const [isExpanding, setIsExpanding] = useState(false);
+  const [expandError, setExpandError] = useState<string | null>(null);
   
   const titleRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
   
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
@@ -95,14 +115,6 @@ export const NoteEditor: React.FC = () => {
       saveNote();
     }
   }, [debouncedTitle, debouncedContent, selectedNote, currentNoteId, updateNote, hasUnsavedChanges]);
-
-  // Auto-resize textarea
-  useEffect(() => {
-    if (contentRef.current) {
-      contentRef.current.style.height = 'auto';
-      contentRef.current.style.height = contentRef.current.scrollHeight + 'px';
-    }
-  }, [content]);
 
   const handleTagsChange = async (newTags: string[]) => {
     if (!selectedNote || selectedNote.id !== currentNoteId) return;
@@ -192,6 +204,128 @@ export const NoteEditor: React.FC = () => {
     return content.trim() ? content.trim().split(/\s+/).length : 0;
   };
 
+  const handleSummarize = async () => {
+    if (!content.trim() || getWordCount() < 25) return;
+
+    setIsSummarizing(true);
+    setSummaryError(null);
+    setSummaryResult('');
+
+    try {
+      const summary = await summarizeText(content);
+      setSummaryResult(summary);
+      setShowSummaryModal(true);
+    } catch (error: any) {
+      console.error('Failed to summarize:', error);
+      setSummaryError(error.message || 'Failed to generate summary. Please try again.');
+      setShowSummaryModal(true);
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  const handleReplaceSummary = async () => {
+    if (!selectedNote || !summaryResult) return;
+
+    try {
+      setContent(summaryResult);
+      await updateNote(selectedNote.id, { content: summaryResult });
+      setShowSummaryModal(false);
+      setSummaryResult('');
+      setSummaryError(null);
+    } catch (error) {
+      console.error('Failed to replace content:', error);
+      setSaveError('Failed to replace content. Please try again.');
+    }
+  };
+
+  const handleAppendSummary = async () => {
+    if (!selectedNote || !summaryResult) return;
+
+    try {
+      const newContent = content + '\n\n---\n\n**Summary:**\n' + summaryResult;
+      setContent(newContent);
+      await updateNote(selectedNote.id, { content: newContent });
+      setShowSummaryModal(false);
+      setSummaryResult('');
+      setSummaryError(null);
+    } catch (error) {
+      console.error('Failed to append summary:', error);
+      setSaveError('Failed to append summary. Please try again.');
+    }
+  };
+
+  const handleCloseSummaryModal = () => {
+    setShowSummaryModal(false);
+    setSummaryResult('');
+    setSummaryError(null);
+  };
+
+  const handleGenerateTitle = async () => {
+    if (!content.trim() || content.length < 50) return;
+
+    setIsGeneratingTitle(true);
+    setTitleError(null);
+    setTitleSuggestions([]);
+
+    try {
+      const suggestions = await generateTitleSuggestions(content);
+      setTitleSuggestions(suggestions);
+      setShowTitleSuggestions(true);
+    } catch (error: any) {
+      console.error('Failed to generate title suggestions:', error);
+      setTitleError(error.message || 'Failed to generate title suggestions. Please try again.');
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  };
+
+  const handleSelectTitle = async (selectedTitle: string) => {
+    if (!selectedNote) return;
+
+    try {
+      setTitle(selectedTitle);
+      await updateNote(selectedNote.id, { title: selectedTitle });
+      setShowTitleSuggestions(false);
+      setTitleSuggestions([]);
+      setTitleError(null);
+    } catch (error) {
+      console.error('Failed to update title:', error);
+      setSaveError('Failed to update title. Please try again.');
+    }
+  };
+
+  const handleExpandContent = async () => {
+    if (!content.trim() || content.length < 20) return;
+
+    setIsExpanding(true);
+    setExpandError(null);
+
+    try {
+      const expandedContent = await expandContent(content);
+      setContent(expandedContent);
+      if (selectedNote) {
+        await updateNote(selectedNote.id, { content: expandedContent });
+      }
+    } catch (error: any) {
+      console.error('Failed to expand content:', error);
+      setExpandError(error.message || 'Failed to expand content. Please try again.');
+    } finally {
+      setIsExpanding(false);
+    }
+  };
+
+  const handleWritingHelp = async () => {
+    try {
+      const help = await getWritingHelp(content);
+      // For now, we'll show this in an alert, but you could create a dedicated modal
+      alert(`Writing Suggestions:\n\n${help}`);
+    } catch (error: any) {
+      console.error('Failed to get writing help:', error);
+      alert('Failed to get writing help. Please try again.');
+    }
+  };
+
   if (!selectedNote) {
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4">
@@ -212,6 +346,18 @@ export const NoteEditor: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950" onKeyDown={handleKeyDown}>
+      {/* AI Toolbar */}
+      <AIToolbar
+        onAutoTitle={handleGenerateTitle}
+        onSummarize={handleSummarize}
+        onExpand={handleExpandContent}
+        onHelp={handleWritingHelp}
+        isGeneratingTitle={isGeneratingTitle}
+        isSummarizing={isSummarizing}
+        isExpanding={isExpanding}
+        contentLength={content.length}
+      />
+      
       {/* Editor Header */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-b border-gray-200/50 dark:border-gray-700/50 p-4 lg:p-6">
         <div className="flex items-center justify-between mb-4">
@@ -256,6 +402,11 @@ export const NoteEditor: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            <SummarizeButton
+              content={content}
+              onSummarize={handleSummarize}
+              isLoading={isSummarizing}
+            />
             <button
               onClick={handleManualSave}
               disabled={isSaving || !hasUnsavedChanges}
@@ -290,16 +441,74 @@ export const NoteEditor: React.FC = () => {
           </div>
         )}
         
+
+      {/* Summary Modal */}
+      <SummaryModal
+        isOpen={showSummaryModal}
+        onClose={handleCloseSummaryModal}
+        originalContent={content}
+        summary={summaryResult}
+        onReplace={handleReplaceSummary}
+        onAppend={handleAppendSummary}
+        isLoading={isSummarizing}
+        error={summaryError}
+      />
+      
+      {/* Expand Error */}
+      {expandError && (
+        <div className="fixed top-4 right-4 z-50 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg shadow-glow dark:shadow-glow-dark">
+          <div className="flex items-center">
+            <AlertCircle size={16} className="text-red-600 dark:text-red-400 mr-2" />
+            <span className="text-sm text-red-700 dark:text-red-300">{expandError}</span>
+            <button
+              onClick={() => setExpandError(null)}
+              className="ml-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
         {/* Title Input */}
-        <input
-          ref={titleRef}
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Note title..."
-          className="w-full text-xl lg:text-2xl font-bold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none focus:ring-0 p-0 transition-colors duration-200 mb-4"
-          maxLength={100}
-        />
+        <div className="relative mb-4">
+          <div className="flex items-center space-x-2">
+            <input
+              ref={titleRef}
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Note title..."
+              className="flex-1 text-xl lg:text-2xl font-bold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none focus:ring-0 p-0 transition-colors duration-200"
+              maxLength={100}
+            />
+            <AutoTitleButton
+              onGenerate={handleGenerateTitle}
+              isLoading={isGeneratingTitle}
+              disabled={content.length < 50}
+            />
+          </div>
+          
+          {/* Title Suggestions */}
+          {showTitleSuggestions && (
+            <TitleSuggestions
+              suggestions={titleSuggestions}
+              onSelect={handleSelectTitle}
+              onRegenerate={handleGenerateTitle}
+              onDismiss={() => {
+                setShowTitleSuggestions(false);
+                setTitleSuggestions([]);
+              }}
+              isLoading={isGeneratingTitle}
+            />
+          )}
+          
+          {/* Title Error */}
+          {titleError && (
+            <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-700 dark:text-red-300">{titleError}</p>
+            </div>
+          )}
+        </div>
         
         {/* Tags Selector - New row below title */}
         <div className="mb-6">
@@ -313,19 +522,17 @@ export const NoteEditor: React.FC = () => {
       </div>
       
       {/* Content Editor */}
-      <div className="flex-1 p-4 lg:p-6">
-        <textarea
-          ref={contentRef}
+      <div className="flex-1 p-4 lg:p-6 pb-20">
+        <RichTextEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(newContent) => setContent(newContent)}
           placeholder="Start writing your note..."
-          className="w-full h-full min-h-64 lg:min-h-96 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none resize-none focus:ring-0 p-0 text-sm lg:text-base leading-relaxed transition-colors duration-200"
-          style={{ fontFamily: 'Inter, sans-serif' }}
+          className="w-full h-full max-h-[calc(100vh-400px)]"
         />
       </div>
 
       {/* Footer Stats */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 px-4 lg:px-6 py-3">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 px-4 lg:px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center space-x-4">
             <span>{getWordCount()} words</span>

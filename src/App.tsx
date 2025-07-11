@@ -108,10 +108,10 @@ function App() {
             {/* Desktop Header */}
             <div className="hidden lg:flex items-center justify-between h-16 px-6 border-b border-gray-200/50 dark:border-gray-700/50">
               <div className="flex items-center group">
-                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 dark:from-primary-400 dark:to-primary-500 rounded-xl flex items-center justify-center mr-3 shadow-glow dark:shadow-glow-dark transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 dark:from-primary-400 dark:to-primary-500 rounded-xl flex items-center justify-center mr-3 shadow-glow dark:shadow-glow-dark transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                   <span className="text-white font-bold text-sm">LN</span>
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent transition-all duration-200">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent transition-all duration-200 mr-2">
                   Lucid-Notes
                 </h1>
               </div>
@@ -120,25 +120,25 @@ function App() {
             </div>
 
             {/* Navigation */}
-            <div className="p-4 mt-14 lg:mt-0 flex-shrink-0">
+            <div className="p-3 mt-14 lg:mt-0 flex-shrink-0">
               {/* Create Note Button - Always at top */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <CreateNoteButton />
               </div>
               
-              <div className="space-y-2 mb-6">
+              <div className="space-y-2 mb-4">
                 <button
                   onClick={() => {
                     setCurrentView('dashboard');
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                     currentView === 'dashboard'
                       ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  <Home size={18} className="mr-3" />
+                  <Home size={18} className="mr-2.5" />
                   Dashboard
                 </button>
                 
@@ -147,13 +147,13 @@ function App() {
                     setCurrentView('notes');
                     setSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                     currentView === 'notes'
                       ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  <FileText size={18} className="mr-3" />
+                  <FileText size={18} className="mr-2.5" />
                   All Notes
                 </button>
               </div>
@@ -207,7 +207,7 @@ const CreateNoteButton: React.FC = () => {
       data-create-note
       onClick={handleCreateNote}
       disabled={isLoading}
-      className="w-full flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-xl hover:from-primary-700 hover:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-soft dark:shadow-soft-dark hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+      className="w-full flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-500 dark:to-primary-600 rounded-lg hover:from-primary-700 hover:to-primary-800 dark:hover:from-primary-600 dark:hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-soft dark:shadow-soft-dark hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
     >
       {isLoading ? (
         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

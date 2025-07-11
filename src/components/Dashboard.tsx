@@ -1,13 +1,15 @@
 import React from 'react';
-import { FileText, Clock, Star, TrendingUp } from 'lucide-react';
+import { FileText, Clock, Star, TrendingUp, Search } from 'lucide-react';
 import { useNotes } from '../contexts/NotesContext';
 import { useTags } from '../contexts/TagsContext';
 import { TagPill } from './TagPill';
+import { SearchBar } from './SearchBar';
 import { formatRelativeTime } from '../utils/date';
 
 export const Dashboard: React.FC = () => {
   const { notes, selectNote } = useNotes();
   const { getTagColor } = useTags();
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const handleNoteClick = (noteId: string) => {
     selectNote(noteId);
@@ -15,17 +17,33 @@ export const Dashboard: React.FC = () => {
     window.dispatchEvent(new CustomEvent('switchToNotesView'));
   };
 
-  const recentNotes = [...notes]
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  // Filter notes based on search query
+  const filteredNotes = React.useMemo(() => {
+    if (!searchQuery.trim()) return notes;
+    
+    const query = searchQuery.toLowerCase();
+    return notes.filter(note => 
+      note.title.toLowerCase().includes(query) ||
+      note.content.toLowerCase().includes(query) ||
+      note.tags.some(tag => tag.toLowerCase().includes(query))
+    );
+  }, [notes, searchQuery]);
+
+  const recentNotes = [...filteredNotes]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 6);
 
-  const favoriteNotes = notes.filter(note => note.isFavorite).slice(0, 3);
+  const favoriteNotes = filteredNotes.filter(note => note.isFavorite).slice(0, 3);
 
   const stats = {
-    totalNotes: notes.length,
+    totalNotes: filteredNotes.length,
     recentNotes: recentNotes.length,
     favoriteNotes: favoriteNotes.length,
-    totalWords: notes.reduce((acc, note) => acc + (note.content.trim() ? note.content.trim().split(/\s+/).length : 0), 0)
+    totalWords: filteredNotes.reduce((acc, note) => acc + (note.content.trim() ? note.content.trim().split(/\s+/).length : 0), 0)
   };
 
   return (
@@ -33,12 +51,24 @@ export const Dashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto p-4 lg:p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome back!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Here's what's happening with your notes today.
-          </p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Welcome back!
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {searchQuery ? `Search results for "${searchQuery}"` : "Here's what's happening with your notes today."}
+              </p>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="w-full lg:w-80">
+              <SearchBar 
+                onSearch={handleSearch}
+                placeholder="Search your notes..."
+              />
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -93,9 +123,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Recent Notes */}
-        {recentNotes.length > 0 && (
+        {recentNotes.length > 0 ? (
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Notes</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              {searchQuery ? 'Search Results' : 'Recent Notes'}
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {recentNotes.map((note) => (
                 <div
@@ -140,10 +172,24 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
           </div>
-        )}
+        ) : searchQuery ? (
+          <div className="mb-8">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-soft dark:shadow-soft-dark">
+                <Search size={24} className="text-orange-500 dark:text-orange-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                No results found
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                No notes found for "{searchQuery}". Try different keywords or check your spelling.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {/* Favorite Notes */}
-        {favoriteNotes.length > 0 && (
+        {favoriteNotes.length > 0 && !searchQuery && (
           <div className="mb-8">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Favorite Notes</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,7 +237,7 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Empty State */}
-        {notes.length === 0 && (
+        {notes.length === 0 && !searchQuery && (
           <div className="text-center py-12">
             <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-soft dark:shadow-soft-dark">
               <FileText size={32} className="text-gray-400 dark:text-gray-500" />
