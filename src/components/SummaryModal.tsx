@@ -46,8 +46,9 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
     <div 
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={handleBackdropClick}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-glow dark:shadow-glow-dark max-w-4xl w-full max-h-[90vh] overflow-hidden my-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-glow dark:shadow-glow-dark max-w-6xl w-full max-h-[90vh] overflow-hidden my-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
@@ -110,9 +111,11 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
                   </span>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {originalContent}
-                  </p>
+                  {/* Render HTML content */}
+                  <div 
+                    className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: originalContent }}
+                  />
                 </div>
               </div>
 
@@ -126,9 +129,11 @@ export const SummaryModal: React.FC<SummaryModalProps> = ({
                   </span>
                 </div>
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 max-h-64 overflow-y-auto border border-purple-200 dark:border-purple-800">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {summary}
-                  </p>
+                  {/* Render HTML content */}
+                  <div 
+                    className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: summary }}
+                  />
                 </div>
               </div>
             </div>

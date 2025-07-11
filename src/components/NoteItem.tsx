@@ -5,6 +5,7 @@ import { useNotes } from '../contexts/NotesContext';
 import { useTags } from '../contexts/TagsContext';
 import { TagPill } from './TagPill';
 import { formatRelativeTime } from '../utils/date';
+import { stripHtml, truncateText } from '../utils/html';
 
 interface NoteItemProps {
   note: Note;
@@ -37,7 +38,9 @@ export const NoteItem: React.FC<NoteItemProps> = ({ note, isSelected }) => {
   };
 
   const getPreviewText = (content: string): string => {
-    return content.length > 100 ? content.substring(0, 100) + '...' : content;
+    // First strip HTML tags, then truncate intelligently
+    const plainText = stripHtml(content);
+    return truncateText(plainText, 100);
   };
 
   return (

@@ -2,32 +2,32 @@ import React from 'react';
 import { Sparkles, FileText, Expand, HelpCircle, Loader2 } from 'lucide-react';
 
 interface AIToolbarProps {
-  onAutoTitle: () => void;
+  onGenerateTitle: () => void;
   onSummarize: () => void;
-  onExpand: () => void;
-  onHelp: () => void;
+  onExpandContent: () => void;
+  onWritingHelp: () => void;
   isGeneratingTitle: boolean;
   isSummarizing: boolean;
   isExpanding: boolean;
-  contentLength: number;
+  canGenerateTitle: boolean;
+  canSummarize: boolean;
+  canExpandContent: boolean;
   className?: string;
 }
 
 export const AIToolbar: React.FC<AIToolbarProps> = ({
-  onAutoTitle,
+  onGenerateTitle,
   onSummarize,
-  onExpand,
-  onHelp,
+  onExpandContent,
+  onWritingHelp,
   isGeneratingTitle,
   isSummarizing,
   isExpanding,
-  contentLength,
+  canGenerateTitle,
+  canSummarize,
+  canExpandContent,
   className = ""
 }) => {
-  const canGenerateTitle = contentLength >= 50;
-  const canSummarize = contentLength >= 100;
-  const canExpand = contentLength >= 20;
-
   const AIButton: React.FC<{
     onClick: () => void;
     icon: React.ReactNode;
@@ -67,7 +67,7 @@ export const AIToolbar: React.FC<AIToolbarProps> = ({
       
       <div className="flex items-center space-x-1">
         <AIButton
-          onClick={onAutoTitle}
+          onClick={onGenerateTitle}
           icon={<Sparkles size={16} />}
           label="Auto-Title"
           tooltip={canGenerateTitle ? "Generate title from content" : "Need at least 50 characters to generate title"}
@@ -80,24 +80,24 @@ export const AIToolbar: React.FC<AIToolbarProps> = ({
           onClick={onSummarize}
           icon={<FileText size={16} />}
           label="Summarize"
-          tooltip={canSummarize ? "Summarize this note" : "Need at least 100 characters to summarize"}
+          tooltip={canSummarize ? "Summarize this note" : "Need at least 25 words to summarize"}
           isLoading={isSummarizing}
           disabled={!canSummarize}
           color="blue"
         />
         
         <AIButton
-          onClick={onExpand}
+          onClick={onExpandContent}
           icon={<Expand size={16} />}
           label="Expand"
-          tooltip={canExpand ? "Expand and improve content" : "Need at least 20 characters to expand"}
+          tooltip={canExpandContent ? "Expand and improve content" : "Need at least 20 characters to expand"}
           isLoading={isExpanding}
-          disabled={!canExpand}
+          disabled={!canExpandContent}
           color="green"
         />
         
         <AIButton
-          onClick={onHelp}
+          onClick={onWritingHelp}
           icon={<HelpCircle size={16} />}
           label="Help"
           tooltip="Get AI writing assistance"

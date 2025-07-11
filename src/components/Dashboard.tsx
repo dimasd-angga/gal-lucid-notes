@@ -5,6 +5,7 @@ import { useTags } from '../contexts/TagsContext';
 import { TagPill } from './TagPill';
 import { SearchBar } from './SearchBar';
 import { formatRelativeTime } from '../utils/date';
+import { stripHtml, truncateText } from '../utils/html';
 
 export const Dashboard: React.FC = () => {
   const { notes, selectNote } = useNotes();
@@ -129,47 +130,52 @@ export const Dashboard: React.FC = () => {
               {searchQuery ? 'Search Results' : 'Recent Notes'}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentNotes.map((note) => (
-                <div
-                  key={note.id}
-                  onClick={() => handleNoteClick(note.id)}
-                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 shadow-soft dark:shadow-soft-dark border border-gray-200/50 dark:border-gray-700/50 cursor-pointer hover:shadow-glow dark:hover:shadow-glow-dark hover:border-primary-200 dark:hover:border-primary-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1 flex-1 mr-2">
-                      {note.title}
-                    </h3>
-                    {note.isFavorite && (
-                      <Star size={16} className="text-yellow-500 dark:text-yellow-400 flex-shrink-0" fill="currentColor" />
-                    )}
+              {recentNotes.map((note) => {
+                const plainTextContent = stripHtml(note.content);
+                const displayContent = truncateText(plainTextContent, 120);
+                
+                return (
+                  <div
+                    key={note.id}
+                    onClick={() => handleNoteClick(note.id)}
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 shadow-soft dark:shadow-soft-dark border border-gray-200/50 dark:border-gray-700/50 cursor-pointer hover:shadow-glow dark:hover:shadow-glow-dark hover:border-primary-200 dark:hover:border-primary-700 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1 flex-1 mr-2">
+                        {note.title}
+                      </h3>
+                      {note.isFavorite && (
+                        <Star size={16} className="text-yellow-500 dark:text-yellow-400 flex-shrink-0" fill="currentColor" />
+                      )}
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3 leading-relaxed">
+                      {displayContent || 'No content yet...'}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>{formatRelativeTime(note.updatedAt)}</span>
+                      {note.tags.length > 0 && (
+                        <div className="flex items-center space-x-1">
+                          {note.tags.slice(0, 2).map((tag) => (
+                            <TagPill
+                              key={tag}
+                              tag={tag}
+                              color={getTagColor(tag)}
+                              size="sm"
+                            />
+                          ))}
+                          {note.tags.length > 2 && (
+                            <span className="text-primary-600 dark:text-primary-400">
+                              +{note.tags.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3 leading-relaxed">
-                    {note.content || 'No content yet...'}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{formatRelativeTime(note.updatedAt)}</span>
-                    {note.tags.length > 0 && (
-                      <div className="flex items-center space-x-1">
-                        {note.tags.slice(0, 2).map((tag) => (
-                          <TagPill
-                            key={tag}
-                            tag={tag}
-                            color={getTagColor(tag)}
-                            size="sm"
-                          />
-                        ))}
-                        {note.tags.length > 2 && (
-                          <span className="text-primary-600 dark:text-primary-400">
-                            +{note.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : searchQuery ? (
@@ -188,53 +194,7 @@ export const Dashboard: React.FC = () => {
           </div>
         ) : null}
 
-        {/* Favorite Notes */}
-        {favoriteNotes.length > 0 && !searchQuery && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Favorite Notes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {favoriteNotes.map((note) => (
-                <div
-                  key={note.id}
-                  onClick={() => handleNoteClick(note.id)}
-                  className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 backdrop-blur-sm rounded-xl p-4 lg:p-6 shadow-soft dark:shadow-soft-dark border border-yellow-200/50 dark:border-yellow-700/50 cursor-pointer hover:shadow-glow dark:hover:shadow-glow-dark transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1 flex-1 mr-2">
-                      {note.title}
-                    </h3>
-                    <Star size={16} className="text-yellow-500 dark:text-yellow-400 flex-shrink-0" fill="currentColor" />
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3 leading-relaxed">
-                    {note.content || 'No content yet...'}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{formatRelativeTime(note.updatedAt)}</span>
-                    {note.tags.length > 0 && (
-                      <div className="flex items-center space-x-1">
-                        {note.tags.slice(0, 2).map((tag) => (
-                          <TagPill
-                            key={tag}
-                            tag={tag}
-                            color={getTagColor(tag)}
-                            size="sm"
-                          />
-                        ))}
-                        {note.tags.length > 2 && (
-                          <span className="text-yellow-600 dark:text-yellow-400">
-                            +{note.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+       
 
         {/* Empty State */}
         {notes.length === 0 && !searchQuery && (

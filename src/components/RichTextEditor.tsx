@@ -187,11 +187,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         contentEditable
         onInput={handleInput}
         onKeyDown={handleKeyDown}
-        className="w-full min-h-48 max-h-80 overflow-y-auto p-4 bg-transparent text-gray-900 dark:text-white focus:outline-none resize-none text-sm lg:text-base leading-relaxed"
+        className="w-full min-h-32 overflow-y-auto p-3 bg-transparent text-gray-900 dark:text-white focus:outline-none resize-none text-sm leading-relaxed"
         style={{ 
+          maxHeight: '50vh',
           fontFamily: 'Inter, sans-serif',
           wordBreak: 'break-word',
-          overflowWrap: 'break-word'
+          overflowWrap: 'break-word',
+          whiteSpace: 'pre-wrap'
         }}
         data-placeholder={placeholder}
         suppressContentEditableWarning={true}
@@ -206,8 +208,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         
         [contenteditable] blockquote {
           border-left: 4px solid #e5e7eb;
-          padding-left: 1rem;
-          margin: 1rem 0;
+          padding-left: 0.75rem;
+          margin: 0.5rem 0;
           font-style: italic;
           color: #6b7280;
         }
@@ -220,8 +222,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         [contenteditable] pre {
           background-color: #f3f4f6;
           border-radius: 0.5rem;
-          padding: 1rem;
-          margin: 1rem 0;
+          padding: 0.5rem;
+          margin: 0.5rem 0;
           font-family: 'JetBrains Mono', monospace;
           font-size: 0.875rem;
           overflow-x: auto;
@@ -232,12 +234,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
         
         [contenteditable] ul, [contenteditable] ol {
-          padding-left: 1.5rem;
+          padding-left: 1.25rem;
           margin: 0.5rem 0;
+          list-style-position: outside;
+        }
+        
+        [contenteditable] ul {
+          list-style-type: disc;
+        }
+        
+        [contenteditable] ol {
+          list-style-type: decimal;
         }
         
         [contenteditable] li {
           margin: 0.25rem 0;
+          display: list-item;
         }
         
         [contenteditable] strong {

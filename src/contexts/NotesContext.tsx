@@ -1,9 +1,30 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Note } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { Note as NoteType } from '../types';
+import { notesApi, Note as SupabaseNote } from '../lib/supabase';
+
+// Convert Supabase note to app note format
+const convertSupabaseNote = (note: SupabaseNote): NoteType => ({
+  id: note.id,
+  title: note.title,
+  content: note.content,
+  tags: note.tags,
+  createdAt: new Date(note.created_at),
+  updatedAt: new Date(note.updated_at),
+  isFavorite: note.is_favorite,
+  aiGenerated: note.ai_generated
+});
+
+// Convert app note to Supabase format
+const convertToSupabaseNote = (note: Partial<NoteType>): Partial<SupabaseNote> => ({
+  title: note.title,
+  content: note.content,
+  tags: note.tags,
+  is_favorite: note.isFavorite,
+  ai_generated: note.aiGenerated
+});
 
 interface NotesState {
-  notes: Note[];
+  notes: NoteType[];
   selectedNoteId: string | null;
   isLoading: boolean;
   isSaving: boolean;
@@ -14,19 +35,19 @@ type NotesAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SAVING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_NOTES'; payload: Note[] }
-  | { type: 'ADD_NOTE'; payload: Note }
-  | { type: 'UPDATE_NOTE'; payload: { id: string; updates: Partial<Note> } }
+  | { type: 'SET_NOTES'; payload: NoteType[] }
+  | { type: 'ADD_NOTE'; payload: NoteType }
+  | { type: 'UPDATE_NOTE'; payload: { id: string; updates: Partial<NoteType> } }
   | { type: 'DELETE_NOTE'; payload: string }
   | { type: 'SELECT_NOTE'; payload: string | null };
 
 interface NotesContextType extends NotesState {
-  createNote: () => Promise<Note>;
-  updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
+  createNote: () => Promise<NoteType>;
+  updateNote: (id: string, updates: Partial<NoteType>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   selectNote: (id: string | null) => void;
   toggleFavorite: (id: string) => Promise<void>;
-  getSelectedNote: () => Note | null;
+  getSelectedNote: () => NoteType | null;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -86,40 +107,49 @@ interface NotesProviderProps {
 }
 
 export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
-  const [storedNotes, setStoredNotes] = useLocalStorage<Note[]>('lucid-notes', []);
-  
   const [state, dispatch] = useReducer(notesReducer, {
-    notes: storedNotes,
+    notes: [],
     selectedNoteId: null,
     isLoading: false,
     isSaving: false,
     error: null,
   });
 
-  // Sync with localStorage whenever notes change
+  // Load notes from Supabase on mount
   useEffect(() => {
-    setStoredNotes(state.notes);
-  }, [state.notes, setStoredNotes]);
+    const loadNotes = async () => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const supabaseNotes = await notesApi.getAll();
+        const notes = supabaseNotes.map(convertSupabaseNote);
+        dispatch({ type: 'SET_NOTES', payload: notes });
+      } catch (error) {
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to load notes' });
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    };
 
-  const createNote = async (): Promise<Note> => {
+    loadNotes();
+  }, []);
+
+  const createNote = async (): Promise<NoteType> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      const newNote: Note = {
-        id: generateId(),
+      const noteData = {
         title: 'Untitled Note',
         content: '',
-        tags: [], // No default tags
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isFavorite: false,
-        aiGenerated: false,
+        tags: [],
+        is_favorite: false,
+        ai_generated: false,
       };
 
-      dispatch({ type: 'ADD_NOTE', payload: newNote });
+      const supabaseNote = await notesApi.create(noteData);
+      const newNote = convertSupabaseNote(supabaseNote);
       
-      // Auto-switch to notes view when creating a note
+      dispatch({ type: 'ADD_NOTE', payload: newNote });
       dispatch({ type: 'SELECT_NOTE', payload: newNote.id });
       
       setTimeout(() => {
@@ -135,13 +165,15 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     }
   };
 
-  const updateNote = async (id: string, updates: Partial<Note>): Promise<void> => {
+  const updateNote = async (id: string, updates: Partial<NoteType>): Promise<void> => {
     dispatch({ type: 'SET_SAVING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      // Simulate async operation with shorter delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      const supabaseUpdates = convertToSupabaseNote(updates);
+      const updatedSupabaseNote = await notesApi.update(id, supabaseUpdates);
+      const updatedNote = convertSupabaseNote(updatedSupabaseNote);
+      
       dispatch({ type: 'UPDATE_NOTE', payload: { id, updates } });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to save note' });
@@ -156,8 +188,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      // Simulate async operation with shorter delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await notesApi.delete(id);
       dispatch({ type: 'DELETE_NOTE', payload: id });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to delete note' });
@@ -183,7 +214,7 @@ export const NotesProvider: React.FC<NotesProviderProps> = ({ children }) => {
     dispatch({ type: 'SELECT_NOTE', payload: id });
   };
 
-  const getSelectedNote = (): Note | null => {
+  const getSelectedNote = (): NoteType | null => {
     return state.notes.find(note => note.id === state.selectedNoteId) || null;
   };
 

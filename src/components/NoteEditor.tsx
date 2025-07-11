@@ -12,6 +12,7 @@ import { TitleSuggestions } from './TitleSuggestions';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatRelativeTime } from '../utils/date';
 import { summarizeText, generateTitleSuggestions, expandContent, getWritingHelp } from '../services/geminiService';
+import { stripHtml } from '../utils/html'
 
 export const NoteEditor: React.FC = () => {
   const { getSelectedNote, updateNote, deleteNote, isSaving } = useNotes();
@@ -20,28 +21,28 @@ export const NoteEditor: React.FC = () => {
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
+  const [tags, setTags] = useState([]);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [currentNoteId, setCurrentNoteId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [summaryResult, setSummaryResult] = useState<string>('');
+  const [summaryResult, setSummaryResult] = useState('');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState(null);
   
   // AI Title Generation
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
-  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [titleSuggestions, setTitleSuggestions] = useState([]);
   const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
-  const [titleError, setTitleError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState(null);
   
   // AI Content Expansion
   const [isExpanding, setIsExpanding] = useState(false);
-  const [expandError, setExpandError] = useState<string | null>(null);
+  const [expandError, setExpandError] = useState(null);
   
-  const titleRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef(null);
   
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
@@ -119,11 +120,6 @@ export const NoteEditor: React.FC = () => {
   const handleTagsChange = async (newTags: string[]) => {
     if (!selectedNote || selectedNote.id !== currentNoteId) return;
 
-    // Ensure at least one tag is present
-    if (newTags.length === 0) {
-      newTags = ['general'];
-    }
-
     // Update tag counts
     const oldTags = [...tags];
     const addedTags = newTags.filter(tag => !oldTags.includes(tag));
@@ -196,23 +192,30 @@ export const NoteEditor: React.FC = () => {
     }
   };
 
+  const getPlainTextLength = () => {
+    return stripHtml(content).trim().length;
+  };
+
   const getCharacterCount = () => {
-    return content.length;
+    return stripHtml(content).length;
   };
 
   const getWordCount = () => {
-    return content.trim() ? content.trim().split(/\s+/).length : 0;
+    return stripHtml(content).trim() ? content.trim().split(/\s+/).length : 0;
   };
 
+  console.log({getPlainTextLength: getPlainTextLength()})
+
   const handleSummarize = async () => {
-    if (!content.trim() || getWordCount() < 25) return;
+     const plainText = stripHtml(content);
+    if (!plainText.trim() || getWordCount() < 25) return;
 
     setIsSummarizing(true);
     setSummaryError(null);
     setSummaryResult('');
 
     try {
-      const summary = await summarizeText(content);
+      const summary = await summarizeText(plainText);
       setSummaryResult(summary);
       setShowSummaryModal(true);
     } catch (error: any) {
@@ -262,14 +265,16 @@ export const NoteEditor: React.FC = () => {
   };
 
   const handleGenerateTitle = async () => {
-    if (!content.trim() || content.length < 50) return;
+    const plainText = stripHtml(content);
+    
+    if (!plainText.trim() || plainText.length < 50) return;
 
     setIsGeneratingTitle(true);
     setTitleError(null);
     setTitleSuggestions([]);
 
     try {
-      const suggestions = await generateTitleSuggestions(content);
+      const suggestions = await generateTitleSuggestions(plainText);
       setTitleSuggestions(suggestions);
       setShowTitleSuggestions(true);
     } catch (error: any) {
@@ -296,7 +301,8 @@ export const NoteEditor: React.FC = () => {
   };
 
   const handleExpandContent = async () => {
-    if (!content.trim() || content.length < 20) return;
+    const plainText = stripHtml(content);
+    if (!plainText.trim() || plainText.length < 20) return;
 
     setIsExpanding(true);
     setExpandError(null);
@@ -328,256 +334,255 @@ export const NoteEditor: React.FC = () => {
 
   if (!selectedNote) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4">
-        <div className="text-center animate-fade-in">
-          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-soft dark:shadow-soft-dark">
-            <Type size={32} className="text-gray-400 dark:text-gray-500" />
+      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600">
+            <Type className="w-full h-full" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <div className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Select a note to start editing
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+          </div>
+          <div className="text-gray-500 dark:text-gray-400">
             Choose a note from the sidebar or create a new one to begin writing.
-          </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950" onKeyDown={handleKeyDown}>
-      {/* AI Toolbar */}
-      <AIToolbar
-        onAutoTitle={handleGenerateTitle}
-        onSummarize={handleSummarize}
-        onExpand={handleExpandContent}
-        onHelp={handleWritingHelp}
-        isGeneratingTitle={isGeneratingTitle}
-        isSummarizing={isSummarizing}
-        isExpanding={isExpanding}
-        contentLength={content.length}
-      />
-      
-      {/* Editor Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-soft dark:shadow-soft-dark border-b border-gray-200/50 dark:border-gray-700/50 p-4 lg:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2 lg:space-x-3">
-            <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-              saveError
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : isSaving 
-                  ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' 
-                  : hasUnsavedChanges
-                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-            }`}>
-              {saveError ? (
-                <>
-                  <AlertCircle size={12} />
-                  Error
-                </>
-              ) : isSaving ? (
-                <>
-                  <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
-                  Saving...
-                </>
-              ) : hasUnsavedChanges ? (
-                <>
-                  <Clock size={12} />
-                  Unsaved
-                </>
-              ) : (
-                <>
-                  <Save size={12} />
-                  Saved
-                </>
-              )}
-            </div>
-            {lastSaved && (
-              <div className="flex items-center space-x-1.5 text-xs text-gray-500 dark:text-gray-400">
-                <Clock size={12} />
-                <span>Last saved {formatRelativeTime(lastSaved)}</span>
+    <>
+      <div className="flex-1 flex h-full flex-col bg-white dark:bg-gray-900 relative max-h-screen" onKeyDown={handleKeyDown}>
+        {/* AI Toolbar */}
+        <AIToolbar
+          onSummarize={handleSummarize}
+          onGenerateTitle={handleGenerateTitle}
+          onExpandContent={handleExpandContent}
+          onWritingHelp={handleWritingHelp}
+          isSummarizing={isSummarizing}
+          isGeneratingTitle={isGeneratingTitle}
+          isExpanding={isExpanding}
+          canSummarize={getWordCount() >= 25}
+          canGenerateTitle={getPlainTextLength() >= 50}
+          canExpandContent={getPlainTextLength() >= 20}
+        />
+        
+        {/* Editor Header */}
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                {saveError ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    Error
+                  </>
+                ) : isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : hasUnsavedChanges ? (
+                  <>
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    Unsaved
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    Saved
+                  </>
+                )}
               </div>
-            )}
+              <div className="flex items-center gap-4">
+                {lastSaved && (
+                  <div className="text-xs text-gray-400 dark:text-gray-500">
+                    <Clock className="w-3 h-3 inline mr-1" />
+                    Last saved {formatRelativeTime(lastSaved)}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleManualSave}
+                    disabled={!hasUnsavedChanges || isSaving}
+                    className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:text-gray-400 dark:disabled:text-gray-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+                    title="Save note (Ctrl+S)"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200"
+                    title="Delete note"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <SummarizeButton
-              content={content}
-              onSummarize={handleSummarize}
-              isLoading={isSummarizing}
-            />
-            <button
-              onClick={handleManualSave}
-              disabled={isSaving || !hasUnsavedChanges}
-              className="px-3 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Save (Ctrl+S)"
-            >
-              <Save size={14} />
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200"
-              title="Delete note"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+
+          {/* Error Message */}
+          {saveError && (
+            <div className="px-6 py-3 bg-red-50 dark:bg-red-900/30 border-t border-red-200 dark:border-red-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+                  <AlertCircle className="w-4 h-4" />
+                  {saveError}
+                </div>
+                <button
+                  onClick={() => setSaveError(null)}
+                  className="ml-auto text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Error Message */}
-        {saveError && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-            <div className="flex items-center">
-              <AlertCircle size={16} className="text-red-600 dark:text-red-400 mr-2" />
-              <span className="text-sm text-red-700 dark:text-red-300">{saveError}</span>
+        {/* Expand Error */}
+        {expandError && (
+          <div className="px-6 py-3 bg-red-50 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800">
+            <div className="flex items-center text-sm text-red-700 dark:text-red-300">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              {expandError}
               <button
-                onClick={() => setSaveError(null)}
-                className="ml-auto text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                onClick={() => setExpandError(null)}
+                className="ml-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
               >
                 ×
               </button>
             </div>
           </div>
         )}
-        
 
-      {/* Summary Modal */}
+        {/* Title Input */}
+        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <input
+                ref={titleRef}
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Note title..."
+                className="flex-1 text-lg font-bold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none focus:ring-0 p-0 transition-colors duration-200"
+                maxLength={100}
+              />
+              <AutoTitleButton
+                onClick={handleGenerateTitle}
+                isLoading={isGeneratingTitle}
+                disabled={getPlainTextLength() < 50}
+              />
+            </div>
+            
+            {/* Title Suggestions */}
+            {showTitleSuggestions && (
+              <TitleSuggestions
+                suggestions={titleSuggestions}
+                onSelect={handleSelectTitle}
+                onClose={() => {
+                  setShowTitleSuggestions(false);
+                  setTitleSuggestions([]);
+                }}
+                isLoading={isGeneratingTitle}
+              />
+            )}
+            
+            {/* Title Error */}
+            {titleError && (
+              <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+                <AlertCircle className="w-4 h-4 inline mr-1" />
+                {titleError}
+              </div>
+            )}
+          </div>
+          
+          {/* Compact Tags Selector */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">Tags:</span>
+            <div className="flex-1 max-w-md">
+              <TagSelector selectedTags={tags} onTagsChange={handleTagsChange} />
+            </div>
+          </div>
+        </div>
+        
+        {/* Content Editor - Dynamic height */}
+        <div className="flex-1 px-6 py-4 overflow-hidden min-h-0">
+          <RichTextEditor
+            value={content}
+            onChange={(newContent) => setContent(newContent)}
+            placeholder="Start writing your note..."
+            className="w-full h-full"
+          />
+        </div>
+
+        {/* Footer Stats - Always at bottom */}
+        <div className="flex-shrink-0 px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mt-auto">
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-4">
+              <span>{getWordCount()} words</span>
+              <span>{getCharacterCount()} characters</span>
+              <span>{tags.length} tags</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 rounded">Ctrl+S</kbd>
+              <span>to save</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Delete Note
+                    </h3>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4">
+                <p className="text-gray-700 dark:text-gray-300">
+                  Are you sure you want to delete "{title || 'Untitled Note'}"? This action cannot be undone.
+                </p>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Summary Modal - Rendered outside the main container */}
       <SummaryModal
         isOpen={showSummaryModal}
         onClose={handleCloseSummaryModal}
         originalContent={content}
         summary={summaryResult}
+        error={summaryError}
         onReplace={handleReplaceSummary}
         onAppend={handleAppendSummary}
-        isLoading={isSummarizing}
-        error={summaryError}
       />
-      
-      {/* Expand Error */}
-      {expandError && (
-        <div className="fixed top-4 right-4 z-50 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg shadow-glow dark:shadow-glow-dark">
-          <div className="flex items-center">
-            <AlertCircle size={16} className="text-red-600 dark:text-red-400 mr-2" />
-            <span className="text-sm text-red-700 dark:text-red-300">{expandError}</span>
-            <button
-              onClick={() => setExpandError(null)}
-              className="ml-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-        {/* Title Input */}
-        <div className="relative mb-4">
-          <div className="flex items-center space-x-2">
-            <input
-              ref={titleRef}
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Note title..."
-              className="flex-1 text-xl lg:text-2xl font-bold bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-none outline-none focus:ring-0 p-0 transition-colors duration-200"
-              maxLength={100}
-            />
-            <AutoTitleButton
-              onGenerate={handleGenerateTitle}
-              isLoading={isGeneratingTitle}
-              disabled={content.length < 50}
-            />
-          </div>
-          
-          {/* Title Suggestions */}
-          {showTitleSuggestions && (
-            <TitleSuggestions
-              suggestions={titleSuggestions}
-              onSelect={handleSelectTitle}
-              onRegenerate={handleGenerateTitle}
-              onDismiss={() => {
-                setShowTitleSuggestions(false);
-                setTitleSuggestions([]);
-              }}
-              isLoading={isGeneratingTitle}
-            />
-          )}
-          
-          {/* Title Error */}
-          {titleError && (
-            <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-700 dark:text-red-300">{titleError}</p>
-            </div>
-          )}
-        </div>
-        
-        {/* Tags Selector - New row below title */}
-        <div className="mb-6">
-          <TagSelector
-            selectedTags={tags}
-            onTagsChange={handleTagsChange}
-            placeholder="Add tags to organize your note..."
-            required={false}
-          />
-        </div>
-      </div>
-      
-      {/* Content Editor */}
-      <div className="flex-1 p-4 lg:p-6 pb-20">
-        <RichTextEditor
-          value={content}
-          onChange={(newContent) => setContent(newContent)}
-          placeholder="Start writing your note..."
-          className="w-full h-full max-h-[calc(100vh-400px)]"
-        />
-      </div>
-
-      {/* Footer Stats */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 px-4 lg:px-6 py-3 flex-shrink-0">
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <div className="flex items-center space-x-4">
-            <span>{getWordCount()} words</span>
-            <span>{getCharacterCount()} characters</span>
-            <span>{tags.length} tags</span>
-          </div>
-          <div className="hidden sm:block">
-            <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">Ctrl+S</kbd>
-            <span className="ml-1">to save</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-glow dark:shadow-glow-dark max-w-md w-full p-6">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mr-3">
-                <Trash2 size={20} className="text-red-600 dark:text-red-400" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Delete Note
-              </h3>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Are you sure you want to delete "{title || 'Untitled Note'}"? This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };

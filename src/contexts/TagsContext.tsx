@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Tag } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { Tag as TagType } from '../types';
+import { tagsApi, Tag as SupabaseTag } from '../lib/supabase';
+
+// Convert Supabase tag to app tag format
+const convertSupabaseTag = (tag: SupabaseTag): TagType => ({
+  id: tag.id,
+  name: tag.name,
+  color: tag.color,
+  count: tag.count
+});
 
 interface TagsState {
-  tags: Tag[];
+  tags: TagType[];
   isLoading: boolean;
   error: string | null;
 }
@@ -11,21 +19,21 @@ interface TagsState {
 type TagsAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_TAGS'; payload: Tag[] }
-  | { type: 'ADD_TAG'; payload: Tag }
-  | { type: 'UPDATE_TAG'; payload: { id: string; updates: Partial<Tag> } }
+  | { type: 'SET_TAGS'; payload: TagType[] }
+  | { type: 'ADD_TAG'; payload: TagType }
+  | { type: 'UPDATE_TAG'; payload: { id: string; updates: Partial<TagType> } }
   | { type: 'DELETE_TAG'; payload: string }
   | { type: 'INCREMENT_TAG_COUNT'; payload: string }
   | { type: 'DECREMENT_TAG_COUNT'; payload: string };
 
 interface TagsContextType extends TagsState {
-  createTag: (name: string) => Promise<Tag>;
-  updateTag: (id: string, updates: Partial<Tag>) => Promise<void>;
+  createTag: (name: string) => Promise<TagType>;
+  updateTag: (id: string, updates: Partial<TagType>) => Promise<void>;
   deleteTag: (id: string) => Promise<void>;
   getTagColor: (tagName: string) => string;
   incrementTagCount: (tagName: string) => void;
   decrementTagCount: (tagName: string) => void;
-  getOrCreateTag: (name: string) => Promise<Tag>;
+  getOrCreateTag: (name: string) => Promise<TagType>;
 }
 
 const TagsContext = createContext<TagsContextType | undefined>(undefined);
@@ -126,57 +134,86 @@ interface TagsProviderProps {
 }
 
 export const TagsProvider: React.FC<TagsProviderProps> = ({ children }) => {
-  const [storedTags, setStoredTags] = useLocalStorage<Tag[]>('lucid-tags', []);
-  
   const [state, dispatch] = useReducer(tagsReducer, {
-    tags: storedTags,
+    tags: [],
     isLoading: false,
     error: null,
   });
 
-  // Sync with localStorage whenever tags change
+  // Load tags from Supabase on mount
   useEffect(() => {
-    setStoredTags(state.tags);
-  }, [state.tags, setStoredTags]);
+    const loadTags = async () => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const supabaseTags = await tagsApi.getAll();
+        const tags = supabaseTags.map(convertSupabaseTag);
+        dispatch({ type: 'SET_TAGS', payload: tags });
+      } catch (error) {
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to load tags' });
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    };
 
-  const createTag = async (name: string): Promise<Tag> => {
-    const trimmedName = name.trim();
-    
-    // Check if tag already exists (case insensitive)
-    const existingTag = state.tags.find(tag => 
-      tag.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-    
-    if (existingTag) {
-      return existingTag;
-    }
+    loadTags();
+  }, []);
 
+  const createTag = async (name: string): Promise<TagType> => {
+  const trimmedName = name.trim();
+  
+  // Check if tag already exists in local state (case insensitive)
+  const existingTag = state.tags.find(tag => 
+    tag.name.toLowerCase() === trimmedName.toLowerCase()
+  );
+  
+  if (existingTag) {
+    return existingTag;
+  }
+
+  dispatch({ type: 'SET_LOADING', payload: true });
+  dispatch({ type: 'SET_ERROR', payload: null });
+
+  try {
+    const tagData = {
+      name: trimmedName,
+      color: getColorForTagName(trimmedName),
+      count: 0,
+    };
+
+    // Use the new createOrGet method instead of create
+    const supabaseTag = await tagsApi.createOrGet(tagData);
+    const newTag = convertSupabaseTag(supabaseTag);
+    
+    dispatch({ type: 'ADD_TAG', payload: newTag });
+    return newTag;
+  } catch (error) {
+    dispatch({ type: 'SET_ERROR', payload: 'Failed to create tag' });
+    throw error;
+  } finally {
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }
+};
+
+// Simplified getOrCreateTag since createTag now handles duplicates
+const getOrCreateTag = async (name: string): Promise<TagType> => {
+  const trimmedName = name.trim();
+  const existingTag = state.tags.find(tag => 
+    tag.name.toLowerCase() === trimmedName.toLowerCase()
+  );
+  
+  if (existingTag) {
+    return existingTag;
+  }
+  
+  return await createTag(trimmedName);
+};
+
+  const updateTag = async (id: string, updates: Partial<TagType>): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      const newTag: Tag = {
-        id: generateId(),
-        name: trimmedName,
-        color: getColorForTagName(trimmedName), // Consistent color based on name
-        count: 0,
-      };
-
-      dispatch({ type: 'ADD_TAG', payload: newTag });
-      return newTag;
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to create tag' });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  const updateTag = async (id: string, updates: Partial<Tag>): Promise<void> => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    dispatch({ type: 'SET_ERROR', payload: null });
-
-    try {
+      await tagsApi.update(id, updates);
       dispatch({ type: 'UPDATE_TAG', payload: { id, updates } });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to update tag' });
@@ -186,19 +223,125 @@ export const TagsProvider: React.FC<TagsProviderProps> = ({ children }) => {
     }
   };
 
-  const deleteTag = async (id: string): Promise<void> => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    dispatch({ type: 'SET_ERROR', payload: null });
+  const deleteTag = async (id: string, options: { safe?: boolean; force?: boolean } = {}): Promise<void> => {
+  dispatch({ type: 'SET_LOADING', payload: true });
+  dispatch({ type: 'SET_ERROR', payload: null });
 
-    try {
-      dispatch({ type: 'DELETE_TAG', payload: id });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete tag' });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+  try {
+    // Find the tag to get its name
+    const tagToDelete = state.tags.find(tag => tag.id === id);
+    
+    if (!tagToDelete) {
+      throw new Error('Tag not found in local state');
     }
-  };
+
+    console.log('Deleting tag:', tagToDelete);
+
+    // Check if tag is being used by any notes
+    const usageDetails = await tagsApi.getTagUsageDetails(tagToDelete.name);
+    console.log(`Tag "${tagToDelete.name}" is used by ${usageDetails.count} notes`);
+
+    if (usageDetails.count > 0) {
+      if (options.force) {
+        // Force delete: just delete the tag
+        console.log('Force deleting tag...');
+        await tagsApi.forceDelete(id);
+      } else if (options.safe) {
+        // Safe delete: remove from all notes first
+        console.log('Safe deleting tag...');
+        await tagsApi.safeDelete(id);
+      } else {
+        // Default: prevent deletion and show which notes are using it
+        const notesList = usageDetails.notes
+          .map(note => `"${note.title}"`)
+          .slice(0, 5)
+          .join(', ');
+        
+        const moreNotesText = usageDetails.count > 5 ? ` and ${usageDetails.count - 5} more` : '';
+        
+        throw new Error(
+          `Cannot delete tag "${tagToDelete.name}" because it's used by ${usageDetails.count} note(s): ${notesList}${moreNotesText}. ` +
+          'Remove the tag from all notes first, or use safe delete to remove it automatically.'
+        );
+      }
+    } else {
+      // Tag is not being used, safe to delete
+      await tagsApi.delete(id);
+    }
+    
+    // Remove from local state only after successful database deletion
+    dispatch({ type: 'DELETE_TAG', payload: id });
+    
+    console.log('Tag deleted successfully');
+  } catch (error: any) {
+    console.error('Failed to delete tag:', error);
+    dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to delete tag' });
+    throw error;
+  } finally {
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }
+};
+
+// Additional helper functions for your TagsContext
+const safeDeleteTag = async (id: string): Promise<void> => {
+  return deleteTag(id, { safe: true });
+};
+
+const forceDeleteTag = async (id: string): Promise<void> => {
+  return deleteTag(id, { force: true });
+};
+
+const deleteMultipleTags = async (ids: string[], safe: boolean = false): Promise<void> => {
+  dispatch({ type: 'SET_LOADING', payload: true });
+  dispatch({ type: 'SET_ERROR', payload: null });
+
+  try {
+    if (safe) {
+      await tagsApi.safeDeleteMultiple(ids);
+    } else {
+      await tagsApi.deleteMultiple(ids);
+    }
+    
+    // Remove from local state
+    ids.forEach(id => {
+      dispatch({ type: 'DELETE_TAG', payload: id });
+    });
+    
+    console.log('Multiple tags deleted successfully');
+  } catch (error: any) {
+    console.error('Failed to delete multiple tags:', error);
+    dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to delete tags' });
+    throw error;
+  } finally {
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }
+};
+
+const cleanupUnusedTags = async (): Promise<void> => {
+  dispatch({ type: 'SET_LOADING', payload: true });
+  dispatch({ type: 'SET_ERROR', payload: null });
+
+  try {
+    // Get unused tags first
+    const unusedTags = await tagsApi.getUnusedTags();
+    
+    // Delete them
+    await tagsApi.cleanupUnusedTags();
+    
+    // Remove from local state
+    unusedTags.forEach(tag => {
+      dispatch({ type: 'DELETE_TAG', payload: tag.id });
+    });
+    
+    console.log(`Cleaned up ${unusedTags.length} unused tags`);
+  } catch (error: any) {
+    console.error('Failed to cleanup unused tags:', error);
+    dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to cleanup tags' });
+    throw error;
+  } finally {
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }
+};
 
   const getTagColor = (tagName: string): string => {
     const tag = state.tags.find(t => t.name === tagName);
@@ -210,24 +353,13 @@ export const TagsProvider: React.FC<TagsProviderProps> = ({ children }) => {
   };
 
   const incrementTagCount = (tagName: string): void => {
+    tagsApi.incrementCount(tagName).catch(console.error);
     dispatch({ type: 'INCREMENT_TAG_COUNT', payload: tagName });
   };
 
   const decrementTagCount = (tagName: string): void => {
+    tagsApi.decrementCount(tagName).catch(console.error);
     dispatch({ type: 'DECREMENT_TAG_COUNT', payload: tagName });
-  };
-
-  const getOrCreateTag = async (name: string): Promise<Tag> => {
-    const trimmedName = name.trim();
-    const existingTag = state.tags.find(tag => 
-      tag.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-    
-    if (existingTag) {
-      return existingTag;
-    }
-    
-    return await createTag(trimmedName);
   };
 
   const value: TagsContextType = {
