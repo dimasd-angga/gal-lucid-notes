@@ -10,7 +10,7 @@ import { useNotes } from './contexts/NotesContext';
 import { useTags } from './contexts/TagsContext';
 import { Menu, X, BarChart3 } from 'lucide-react';
 import { ThemeToggle } from './components/ThemeToggle';
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'editor'>('dashboard');
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -118,6 +118,7 @@ function App() {
           <AppContent />
         </NotesProvider>
       </TagsProvider>
+      <SpeedInsights />
     </ThemeProvider>
   );
 }
