@@ -79,3 +79,4 @@ Tested on the following browsers and devices:
 - Optimize performance for large-scale usage or mobile.
 - Refactor components for scalability and better separation of concerns.
 - Integrate CI/CD pipeline for automated testing and deployment.
+
