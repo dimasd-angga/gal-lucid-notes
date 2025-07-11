@@ -7,8 +7,11 @@ A brief description of what your project does and its main features.
 ## 🚀 Live Demo & Loom Video
 
 🔗 [Live Deployment]([https://your-deployment-url.com](https://gal-lucid-notes.vercel.app/))
+
 🎬 [Loom - Part 1: Lucid Notes End User Demo Walkthrough](https://www.loom.com/share/59c2a26b1da7473aa1930ada6726821a?sid=71d35c35-6614-4e4f-a3f9-19b8c2ddc499)
+
 🎬 [Loom - Part 2: Quick Walkthrough of Structure Project](https://www.loom.com/share/f287843ef2324926ba686953a546c08b?sid=d1851691-2d90-4a4e-809d-332b754d1aa2)
+
 🎬 [Loom - Part 3: Quick Explain of AI Functionality and Analytics Tracking](https://www.loom.com/share/18157b3adb4040328333969bd079d477?sid=5961856b-da99-4ca8-9595-af751efc7682)
 
 ---
